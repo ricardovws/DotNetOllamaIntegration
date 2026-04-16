@@ -1,0 +1,48 @@
+## --- Build Artifacts ---
+[Bb]in/
+[Oo]bj/
+[Tt]est[Cc]onfig/
+
+## --- Visual Studio & MSBuild ---
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+
+## --- NuGet Packages ---
+*.nupkg
+# Most modern projects restore packages on the fly; don't commit the folder
+**/packages/*
+!**/packages/build/
+
+## --- .NET Core / .NET 5+ ---
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## --- Environment & Secrets ---
+# Never commit your local secrets or environment overrides
+.env
+.env.*
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+## --- IDE Specifics (VS Code & Rider) ---
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.iws
+
+## --- Operating System Files ---
+.DS_Store
+Thumbs.db
+
+## --- Azure & Cloud ---
+*.publishsettings
+/Log/
