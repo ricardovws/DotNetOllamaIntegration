@@ -20,20 +20,20 @@ builder.Services.AddScoped<IOllamaApiClient>(sp =>
 var app = builder.Build();
 
 // 2. Middleware Global de Validação da API_KEY (Mantido igual)
-//app.Use(async (context, next) =>
-//{
-//    var expectedApiKey = app.Configuration.GetValue<string>("API_KEY") ?? "chave-secreta-padrao";
+app.Use(async (context, next) =>
+{
+    var expectedApiKey = app.Configuration.GetValue<string>("API_KEY") ?? "chave-secreta-padrao";
 
-//    if (!context.Request.Headers.TryGetValue("X-API-KEY", out var extractedApiKey) ||
-//        extractedApiKey != expectedApiKey)
-//    {
-//        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-//        await context.Response.WriteAsync("Unauthorized: API Key ausente ou inválida.");
-//        return;
-//    }
+    if (!context.Request.Headers.TryGetValue("X-API-KEY", out var extractedApiKey) ||
+        extractedApiKey != expectedApiKey)
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsync("Unauthorized: API Key ausente ou inválida.");
+        return;
+    }
 
-//    await next(context);
-//});
+    await next(context);
+});
 
 // 3. Rota GET: Retornar modelos disponíveis usando OllamaSharp
 app.MapGet("/api/models", async (IOllamaApiClient ollama) =>
