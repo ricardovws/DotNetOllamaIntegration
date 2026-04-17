@@ -61,7 +61,11 @@ app.MapPost("/llm-api/v1", async (PromptRequest request, IOllamaApiClient ollama
             fullResponse += answer;
         }
 
-        return Results.Ok(new { response = fullResponse });
+        return Results.Ok(new
+        {
+            model = request.Model,
+            response = fullResponse
+        });
     }
     catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
     {
