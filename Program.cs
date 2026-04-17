@@ -63,6 +63,10 @@ app.MapPost("/llm-api/v1", async (PromptRequest request, IOllamaApiClient ollama
 
         return Results.Ok(new { response = fullResponse });
     }
+    catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+    {
+        return Results.NotFound(new { error = $"Model '{request.Model}' not found in Ollama server." });
+    }
     catch (Exception ex)
     {
         return Results.Problem($"An error occurred while processing the LLM request: {ex.Message}");
