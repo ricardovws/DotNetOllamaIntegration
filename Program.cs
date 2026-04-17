@@ -31,7 +31,9 @@ app.Use(async (context, next) =>
     await next(context);
 });
 
-app.MapGet("/llm-api/v1", async (IOllamaApiClient ollama) =>
+var path = "/llm-api/v1";
+
+app.MapGet(path, async (IOllamaApiClient ollama) =>
 {
     var models = await ollama.ListLocalModelsAsync();
 
@@ -42,34 +44,34 @@ app.MapGet("/llm-api/v1", async (IOllamaApiClient ollama) =>
     return Results.Ok(new { Models = modelList });
 });
 
-app.MapPost("/llm-api/v1", async (PromptRequest request, IOllamaApiClient ollama, IConfiguration config) =>
+app.MapPost(path, async (PromptRequest request, IOllamaApiClient ollama, IConfiguration config) =>
 {
-    if (string.IsNullOrWhiteSpace(request.Prompt) || string.IsNullOrWhiteSpace(request.Model))
+    if (string.IsNullOrWhiteSpace(request.prompt) || string.IsNullOrWhiteSpace(request.model))
     {
         return Results.BadRequest("The 'model' and 'prompt' attributes are required.");
     }
 
-    ollama.SelectedModel = request.Model;
+    ollama.SelectedModel = request.model;
 
     try
     {
         var chat = new Chat(ollama);
         var fullResponse = string.Empty;
 
-        await foreach (var answer in chat.SendAsync(request.Prompt))
+        await foreach (var answer in chat.SendAsync(request.prompt))
         {
             fullResponse += answer;
         }
 
         return Results.Ok(new
         {
-            model = request.Model,
+            model = request.model,
             response = fullResponse
         });
     }
     catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
     {
-        return Results.NotFound(new { error = $"Model '{request.Model}' not found in Ollama server." });
+        return Results.NotFound(new { error = $"Model '{request.model}' not found in Ollama server." });
     }
     catch (Exception ex)
     {
