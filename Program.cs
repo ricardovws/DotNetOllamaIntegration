@@ -79,4 +79,4 @@ app.MapPost("/llm-api/v1", async (PromptRequest request, IOllamaApiClient ollama
 
 app.Run();
 
-public record PromptRequest(string Model, string Prompt);
+public record PromptRequest(string model, string prompt);
