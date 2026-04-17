@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "DotNetOllamaIntegration": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Local"
+      },
+      "applicationUrl": "https://localhost:57662;http://localhost:57663"
+    }
+  }
+}
