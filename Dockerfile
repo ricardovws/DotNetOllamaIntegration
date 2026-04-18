@@ -1,6 +1,6 @@
 # ESTÁGIO 1: Build (A cozinha)
 # Usamos o SDK do .NET para compilar o código
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copia os arquivos de projeto (.csproj) e restaura as dependências
