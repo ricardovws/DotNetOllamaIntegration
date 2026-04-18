@@ -2,9 +2,11 @@
 
 var builder = WebApplication.CreateBuilder(args);
 
+var ollamaUrl = builder.Configuration["OLLAMA_ENDPOINT"] ?? "http://localhost:11434";
+
 builder.Services.AddHttpClient("OllamaClient", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:11434");
+    client.BaseAddress = new Uri(ollamaUrl);
 });
 
 builder.Services.AddScoped<IOllamaApiClient>(sp =>
