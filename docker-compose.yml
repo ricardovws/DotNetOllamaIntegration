@@ -1,0 +1,32 @@
+services:
+  api:
+    build: .
+    container_name: dotnet-ollama-api
+    restart: always
+    environment:
+      - API_KEY=${API_KEY}
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Permite acessar o Ollama no host
+    networks:
+      - api-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt # Para SSL (Certbot)
+    depends_on:
+      - api
+    networks:
+      - api-network
+
+networks:
+  api-network:
+    driver: bridge
