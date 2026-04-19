@@ -95,7 +95,7 @@ app.MapPost($"{path}/embeddings", async (PromptRequest request, OllamaApiClient 
     
     try
     {
-        var service = ollama.AsTextEmbeddingGenerationService();
+        var service = ((OllamaApiClient)ollama).AsTextEmbeddingGenerationService();
         var embeddings = await service.GenerateEmbeddingAsync(request.prompt);
 
         return Results.Ok(new
