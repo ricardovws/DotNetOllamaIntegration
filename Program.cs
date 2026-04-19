@@ -84,9 +84,9 @@ app.MapPost(path, async (PromptRequest request, IOllamaApiClient ollama, IConfig
 
 app.MapPost($"{path}/embeddings", async (PromptRequest request, IOllamaApiClient ollama) =>
 {
-    if (string.IsNullOrWhiteSpace(request.prompt) || string.IsNullOrWhiteSpace(request.model))
+    if (string.IsNullOrWhiteSpace(request.prompt))
     {
-        return Results.BadRequest("The 'model' and 'prompt' attributes are required.");
+        return Results.BadRequest("The 'prompt' attributes are required.");
     }
     
     var embeddingDefaultModel = "mxbai-embed-large";
