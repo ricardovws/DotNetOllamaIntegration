@@ -100,7 +100,7 @@ app.MapPost($"{path}/embeddings", async (PromptRequest request, IOllamaApiClient
 
         return Results.Ok(new
         {
-            model = request.model,
+            model = ollama.SelectedModel,
             embeddings = embeddings
         });
     }
