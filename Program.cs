@@ -85,48 +85,28 @@ app.MapPost(path, async (PromptRequest request, IOllamaApiClient ollama, IConfig
 app.MapPost($"{path}/stream", async (PromptRequest request, IOllamaApiClient ollama) =>
 {
     if (string.IsNullOrWhiteSpace(request.prompt) || string.IsNullOrWhiteSpace(request.model))
+    {
         return Results.BadRequest("The 'model' and 'prompt' attributes are required.");
+    }
 
     ollama.SelectedModel = request.model;
 
-    // Criamos o stream como uma função local
+    // Criamos uma função local para gerar o stream
     async IAsyncEnumerable<string> GenerateStream()
     {
         var chat = new Chat(ollama);
 
-        // O try-catch DEVE envolver o loop de consumo
-        IAsyncEnumerator<string> enumerator = chat.SendAsync(request.prompt).GetAsyncEnumerator();
-
-        try
+        // O método SendAsync do OllamaSharp já retorna um IAsyncEnumerable
+        await foreach (var answer in chat.SendAsync(request.prompt))
         {
-            while (await enumerator.MoveNextAsync())
-            {
-                yield return enumerator.Current;
-            }
+            // Retorna cada pedaço (chunk) assim que ele chega do Ollama
+            yield return answer;
         }
-        finally
-        {
-            await enumerator.DisposeAsync();
-        }
-        // Se houver erro de conexão aqui, o cliente verá a conexão ser interrompida abruptamente,
-        // o que é o comportamento correto para streams HTTP.
     }
 
-    try
-    {
-        // Teste rápido: Verificamos se o modelo existe ANTES de começar o stream
-        var models = await ollama.ListLocalModelsAsync();
-        if (!models.Any(m => m.Name == request.model))
-        {
-            return Results.NotFound(new { error = $"Model '{request.model}' not found." });
-        }
-
-        return Results.Ok(GenerateStream());
-    }
-    catch (Exception ex)
-    {
-        return Results.Problem($"Erro ao iniciar o Ollama: {ex.Message}");
-    }
+    // Retornamos o stream diretamente. 
+    // O ASP.NET Core definirá automaticamente o Content-Type como text/plain ou application/json-seq
+    return Results.Ok(GenerateStream());
 });
 
 app.MapPost($"{path}/embeddings", async (PromptRequest request, IOllamaApiClient ollama) =>
