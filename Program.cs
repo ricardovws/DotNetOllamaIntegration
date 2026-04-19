@@ -82,7 +82,7 @@ app.MapPost(path, async (PromptRequest request, IOllamaApiClient ollama, IConfig
     }
 });
 
-app.MapPost($"{path}/embeddings", async (PromptRequest request, OllamaApiClient ollama) =>
+app.MapPost($"{path}/embeddings", async (PromptRequest request, IOllamaApiClient ollama) =>
 {
     if (string.IsNullOrWhiteSpace(request.prompt) || string.IsNullOrWhiteSpace(request.model))
     {
