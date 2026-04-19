@@ -82,6 +82,53 @@ app.MapPost(path, async (PromptRequest request, IOllamaApiClient ollama, IConfig
     }
 });
 
+app.MapPost($"{path}/stream", async (PromptRequest request, IOllamaApiClient ollama) =>
+{
+    if (string.IsNullOrWhiteSpace(request.prompt) || string.IsNullOrWhiteSpace(request.model))
+        return Results.BadRequest("The 'model' and 'prompt' attributes are required.");
+
+    ollama.SelectedModel = request.model;
+
+    // Criamos o stream como uma função local
+    async IAsyncEnumerable<string> GenerateStream()
+    {
+        var chat = new Chat(ollama);
+
+        // O try-catch DEVE envolver o loop de consumo
+        IAsyncEnumerator<string> enumerator = chat.SendAsync(request.prompt).GetAsyncEnumerator();
+
+        try
+        {
+            while (await enumerator.MoveNextAsync())
+            {
+                yield return enumerator.Current;
+            }
+        }
+        finally
+        {
+            await enumerator.DisposeAsync();
+        }
+        // Se houver erro de conexão aqui, o cliente verá a conexão ser interrompida abruptamente,
+        // o que é o comportamento correto para streams HTTP.
+    }
+
+    try
+    {
+        // Teste rápido: Verificamos se o modelo existe ANTES de começar o stream
+        var models = await ollama.ListLocalModelsAsync();
+        if (!models.Any(m => m.Name == request.model))
+        {
+            return Results.NotFound(new { error = $"Model '{request.model}' not found." });
+        }
+
+        return Results.Ok(GenerateStream());
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Erro ao iniciar o Ollama: {ex.Message}");
+    }
+});
+
 app.MapPost($"{path}/embeddings", async (PromptRequest request, IOllamaApiClient ollama) =>
 {
     if (string.IsNullOrWhiteSpace(request.prompt))
