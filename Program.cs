@@ -82,31 +82,48 @@ app.MapPost(path, async (PromptRequest request, IOllamaApiClient ollama, IConfig
     }
 });
 
-app.MapPost($"{path}/stream", async (PromptRequest request, IOllamaApiClient ollama) =>
+app.MapPost($"{path}/stream", async (PromptRequest request, IOllamaApiClient ollama, HttpContext context) =>
 {
+    // 1. Validação básica
     if (string.IsNullOrWhiteSpace(request.prompt) || string.IsNullOrWhiteSpace(request.model))
     {
         return Results.BadRequest("The 'model' and 'prompt' attributes are required.");
     }
 
-    ollama.SelectedModel = request.model;
-
-    // Criamos uma função local para gerar o stream
-    async IAsyncEnumerable<string> GenerateStream()
+    try
     {
-        var chat = new Chat(ollama);
-
-        // O método SendAsync do OllamaSharp já retorna um IAsyncEnumerable
-        await foreach (var answer in chat.SendAsync(request.prompt))
+        // 2. Fail-fast: Verificamos se o modelo existe antes de iniciar o stream
+        var models = await ollama.ListLocalModelsAsync();
+        if (!models.Any(m => m.Name.Contains(request.model, StringComparison.OrdinalIgnoreCase)))
         {
-            // Retorna cada pedaço (chunk) assim que ele chega do Ollama
-            yield return answer;
+            return Results.NotFound(new { error = $"Model '{request.model}' not found in Ollama server." });
         }
-    }
 
-    // Retornamos o stream diretamente. 
-    // O ASP.NET Core definirá automaticamente o Content-Type como text/plain ou application/json-seq
-    return Results.Ok(GenerateStream());
+        ollama.SelectedModel = request.model;
+
+        // 3. Configura o Header para o Bruno entender que é um Stream de texto
+        context.Response.ContentType = "text/plain; charset=utf-8";
+
+        // 4. Implementação do Stream
+        async IAsyncEnumerable<string> GenerateStream()
+        {
+            var chat = new Chat(ollama);
+
+            // O try-catch interno garante que se o Ollama cair no meio, a conexão encerra
+            await foreach (var answer in chat.SendAsync(request.prompt))
+            {
+                yield return answer;
+            }
+        }
+
+        // Retornamos o stream. O .NET se encarrega do "chunked transfer encoding"
+        return Results.Ok(GenerateStream());
+    }
+    catch (Exception ex)
+    {
+        // Erros aqui só acontecem ANTES do stream começar
+        return Results.Problem($"An error occurred while initializing the stream: {ex.Message}");
+    }
 });
 
 app.MapPost($"{path}/embeddings", async (PromptRequest request, IOllamaApiClient ollama) =>
