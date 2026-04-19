@@ -1,4 +1,5 @@
-﻿using OllamaSharp;
+﻿using Microsoft.SemanticKernel.Embeddings;
+using OllamaSharp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,6 +79,38 @@ app.MapPost(path, async (PromptRequest request, IOllamaApiClient ollama, IConfig
     catch (Exception ex)
     {
         return Results.Problem($"An error occurred while processing the LLM request: {ex.Message}");
+    }
+});
+
+app.MapPost($"{path}/embeddings", async (PromptRequest request, OllamaApiClient ollama) =>
+{
+    if (string.IsNullOrWhiteSpace(request.prompt) || string.IsNullOrWhiteSpace(request.model))
+    {
+        return Results.BadRequest("The 'model' and 'prompt' attributes are required.");
+    }
+    
+    var embeddingDefaultModel = "mxbai-embed-large";
+    
+    ollama.SelectedModel = string.IsNullOrEmpty(request.model) ? embeddingDefaultModel : request.model;
+    
+    try
+    {
+        var service = ollama.AsTextEmbeddingGenerationService();
+        var embeddings = await service.GenerateEmbeddingAsync(request.prompt);
+
+        return Results.Ok(new
+        {
+            model = request.model,
+            embeddings = embeddings
+        });
+    }
+    catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+    {
+        return Results.NotFound(new { error = $"Model '{request.model}' not found in Ollama server." });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"An error occurred while generating the embedding: {ex.Message}");
     }
 });
 
